@@ -22,6 +22,10 @@ model User {
   image         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  role String? @default("user")
+  banned Boolean?
+  banReason String?
+  banExpires Int?
   session       Session[]
   account       Account[]
 }
@@ -62,4 +66,5 @@ model Verification {
   expiresAt  DateTime
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  @@map("verification")
 }

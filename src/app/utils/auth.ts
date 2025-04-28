@@ -3,7 +3,8 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { PrismaClient } from "@prisma/client";
 import { prisma } from "../db/db";
 import config from "../config";
- 
+import { admin } from "better-auth/plugins"
+
 export const auth = betterAuth({
     onAPIError: {
         throw: true,
@@ -28,12 +29,21 @@ export const auth = betterAuth({
             redirectURI:`${config.BACKEND_URL}${config.GOOGLE_CALLBACK_URL}`,
             
         },
-        facebook: {
-            clientId: config.FACEBOOK_ID || "",
-            clientSecret: config.FACEBOOK_SECRET || "",
-        },
+        // facebook: {
+        //     clientId: config.FACEBOOK_ID || "",
+        //     clientSecret: config.FACEBOOK_SECRET || "",
+        // },
         
     },
-    
+    plugins:[
+     admin({
+        adminRoles: ["admin","superadmin"],
+        adminUserIds:[],
+        defaultRole:"user",
+        defaultBanReason:"No reason",
+        impersonationSessionDuration: 60 * 60 * 24,
+      
+     })   
+]
    
 });

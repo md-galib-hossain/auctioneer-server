@@ -2,6 +2,7 @@ import { Server } from "http";
 import config from "./app/config";
 import app from "./app";
 import { connectDB, prisma } from "./app/db/db";
+import { auth } from "./app/utils/auth";
 
 let server: Server;
 
@@ -26,15 +27,38 @@ const unexpectedErrorHandler = (error: unknown) => {
   console.error("🔥 Unexpected Error: ", error);
   exitHandler();
 };
-
-
-
+const seedSuperAdmin = async () => {
+  const exists = await prisma.user.findFirst({
+    where: { email: "mdgalib23@gmail.com" },
+  });
+  if (!exists) {
+    const user = await auth.api.signUpEmail({
+      body: {
+        name: "Md Galib Hossain",
+        email: "mdgalib23@gmail.com",
+        password: "12345678",
+        
+      },
+    });
+    if (user.user.id) {
+      await prisma.user.update({
+        where: { id: user.user.id },
+        data: {
+          role: {
+            set: "superadmin",
+          },
+        },
+      });
+    }
+  }
+};
 const main = async () => {
   try {
     await connectDB();
     server = app.listen(config.PORT, () => {
       console.log(`🚀 Server listening on port: ${config.PORT}`);
     });
+    await seedSuperAdmin();
 
     process.on("uncaughtException", unexpectedErrorHandler);
     process.on("unhandledRejection", unexpectedErrorHandler);
