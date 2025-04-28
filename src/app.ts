@@ -2,16 +2,20 @@ import express, { Application, NextFunction, Request, Response } from "express";
 import cors from "cors";
 import httpStatus from "http-status";
 import cookieParser from "cookie-parser";
+import { toNodeHandler } from "better-auth/node";
 
 import router from "./app/routes";
 import globalErrorHandler from "./app/middlewares/globalErrorHandler";
+import { auth } from "./app/utils/auth";
 const app: Application = express();
 
 app.use(
-  cors(),
+  cors({origin : ["http://localhost:3000"], credentials : true}),
   // {origin : ["http://localhost:3000"], credentials : true}
 );
 app.use(cookieParser());
+app.all('/api/auth/{*any}', toNodeHandler(auth));
+
 //parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -21,6 +25,7 @@ app.get("/", async (req: Request, res: Response) => {
     message: "Hello",
   });
 });
+
 app.use("/api/v1", router);
 app.use(globalErrorHandler);
 app.use((req: Request, res: Response, next: NextFunction) => {

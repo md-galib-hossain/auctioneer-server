@@ -1,9 +1,9 @@
-import { Prisma } from "@rakhal/db";
-import { ZodError } from "@rakhal/validation-schemas";
 import { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
 import handleZodError from "../errors/handleZodError";
 import AppError from "../errors/AppError";
+import { ZodError } from "zod";
+import { Prisma } from '@prisma/client'
 
 const globalErrorHandler = (
   err: any,

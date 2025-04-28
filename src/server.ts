@@ -27,6 +27,8 @@ const unexpectedErrorHandler = (error: unknown) => {
   exitHandler();
 };
 
+
+
 const main = async () => {
   try {
     await connectDB();
