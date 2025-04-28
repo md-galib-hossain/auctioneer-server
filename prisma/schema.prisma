@@ -1,12 +1,8 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  // output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -15,19 +11,25 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
+  id            String        @id @default(uuid())
+  email         String        @unique
   name          String
-  emailVerified Boolean?  @default(false)
+  emailVerified Boolean?      @default(false)
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  role String? @default("user")
-  banned Boolean?
-  banReason String?
-  banExpires Int?
-  session       Session[]
-  account       Account[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  role          String?       @default("user") // Options: user, admin, superadmin
+  banned        Boolean?      @default(false)
+  banReason     String?
+  banExpires    Int?
+  sessions      Session[]
+  accounts      Account[]
+  bids          Bid[]
+  cartItems     CartItem[]
+  auctionRooms  AuctionRoom[] @relation("AuctionRoomParticipants")
+  messages      ChatMessage[]
+  auctionRoom   AuctionRoom[]
+  auctionItem   AuctionItem[]
 }
 
 model Session {
@@ -39,7 +41,7 @@ model Session {
   userAgent String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Account {
@@ -56,7 +58,7 @@ model Account {
   password              String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
-  user                  User      @relation(fields: [userId], references: [id])
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Verification {
@@ -66,5 +68,87 @@ model Verification {
   expiresAt  DateTime
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
   @@map("verification")
+}
+
+model AuctionRoom {
+  id           String        @id @default(uuid())
+  title        String
+  roomCode  String        @unique
+  description  String? // Optional hints about item types
+  isPrivate    Boolean       @default(false)
+  password     String? // Required for private rooms
+  status       String        @default("pending") // Options: pending, active, closed
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  startTime    DateTime?
+  endTime      DateTime?
+  createdBy    String // Admin or superadmin who created the room
+  creator      User          @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+  participants User[]        @relation("AuctionRoomParticipants")
+  items        AuctionItem[]
+  rules        AuctionRule[]
+  bids         Bid[]
+  messages     ChatMessage[]
+}
+
+model AuctionItem {
+  id            String      @id @default(uuid())
+  auctionRoomId String
+  name          String // Revealed after entering room
+  description   String?
+  startingPrice Float
+  currentPrice  Float? // Updated with highest bid
+  status        String      @default("pending") // Options: pending, active, sold
+  winnerId      String? // User who won the item
+  winner        User?       @relation(fields: [winnerId], references: [id], onDelete: SetNull)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  auctionRoom   AuctionRoom @relation(fields: [auctionRoomId], references: [id], onDelete: Cascade)
+  bids          Bid[]
+  cartItems     CartItem[]
+}
+
+model AuctionRule {
+  id            String      @id @default(uuid())
+  auctionRoomId String
+  description   String // e.g., "Next bid must be within 15 seconds"
+  key           String? // e.g., "bid_time_limit"
+  value         String? // e.g., "15"
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  auctionRoom   AuctionRoom @relation(fields: [auctionRoomId], references: [id], onDelete: Cascade)
+}
+
+model Bid {
+  id            String      @id @default(uuid())
+  auctionRoomId String
+  auctionItemId String
+  userId        String
+  amount        Float
+  createdAt     DateTime    @default(now())
+  auctionRoom   AuctionRoom @relation(fields: [auctionRoomId], references: [id], onDelete: Cascade)
+  auctionItem   AuctionItem @relation(fields: [auctionItemId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+}
+
+model CartItem {
+  id            String      @id @default(uuid())
+  userId        String
+  auctionItemId String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  auctionItem   AuctionItem @relation(fields: [auctionItemId], references: [id], onDelete: Restrict)
+}
+
+model ChatMessage {
+  id            String      @id @default(uuid())
+  auctionRoomId String
+  userId        String
+  content       String
+  createdAt     DateTime    @default(now())
+  auctionRoom   AuctionRoom @relation(fields: [auctionRoomId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Restrict)
 }
