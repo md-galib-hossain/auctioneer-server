@@ -72,6 +72,12 @@ model Verification {
   @@map("verification")
 }
 
+enum AuctionRoomStatus {
+  pending
+  active
+  closed
+}
+
 model AuctionRoom {
   id           String        @id @default(uuid())
   title        String
@@ -79,7 +85,7 @@ model AuctionRoom {
   description  String? // Optional hints about item types
   isPrivate    Boolean       @default(false)
   password     String? // Required for private rooms
-  status       String        @default("pending") // Options: pending, active, closed
+  status       AuctionRoomStatus        
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   startTime    DateTime?
