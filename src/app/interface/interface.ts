@@ -4,26 +4,26 @@ export type TSendResponse<T> = {
   success: boolean;
   message: string;
   meta?: {
-    page: number| undefined;
-    limit: number| undefined;
-    total: number| undefined;
-  }| null ;
+    limit?: number;
+    total?: number;
+    nextCursor?: string | null;
+  } | null;
   data: T | null | undefined;
 };
 
+
 export type TPaginationOptions = {
-  page : number| undefined;
-  limit : number| undefined;
-  sortBy : string | undefined;
-  sortOrder: string | undefined;
-}
+  limit?: number;
+  cursor?: string;
+};
+
 
 
 export type TGenericResponse<T> = {
   meta: {
-    page: number | undefined;
-    limit: number | undefined;
-    total: number| undefined;
+    limit?: number;
+    total?: number;
+    nextCursor?: string | null;
   };
   data: T;
 };

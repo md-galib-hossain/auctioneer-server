@@ -85,7 +85,8 @@ model AuctionRoom {
   description  String? // Optional hints about item types
   isPrivate    Boolean       @default(false)
   password     String? // Required for private rooms
-  status       AuctionRoomStatus        
+  status       AuctionRoomStatus  
+  isActive Boolean @default(true)      
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   startTime    DateTime?

@@ -1,37 +1,97 @@
+import type { Prisma } from "@prisma/client";
+
+
+
+
+
 type Delegate<T> = {
   findMany: (args: any) => Promise<T[]>;
+  count: (args: any) => Promise<number>;
 };
 
 interface Meta {
-  page: number | undefined;    
-  limit: number| undefined;
-  total: number| undefined;
-  nextCursor?: string | null | undefined;
+  page?: number;
+  limit?: number;
+  total?: number;
+  nextCursor?: string | null;
 }
 
+interface QueryBuilderOptions<T> {
+  defaultLimit?: number;
+  searchableFields?: (keyof T)[];
+  enumFields?: (keyof T)[];
+  defaultSort?: Prisma.Enumerable<Prisma.SortOrder>;
+  cursorField?: keyof T;
+}
+
+/**
+ * QueryBuilder is a utility class to dynamically construct Prisma queries
+ * based on incoming query parameters, supporting features like search, filter,
+ * sorting, field selection, and cursor-based pagination.
+ *
+ * @template T - The Prisma model type (e.g., IAuctionRoom).
+ *
+ * @param delegate - The Prisma delegate for the model, typically `prisma.modelName`.
+ * @param query - The incoming query object from the request, typically of type `Record<string, unknown>`.
+ * @param options - Optional configuration to customize query behavior.
+ *
+ * @example
+ * const qb = new QueryBuilder<IAuctionRoom>(prisma.auctionRoom, query, {
+ *   defaultLimit: 10,
+ *   searchableFields: ['roomCode', 'title'],
+ *   enumFields: ['isPrivate', 'status'],
+ *   cursorField: 'id',
+ * });
+ * const result = await qb
+ *   .search()
+ *   .filter()
+ *   .sort()
+ *   .cursorPaginate()
+ *   .fields()
+ *   .executeWithMeta();
+ *
+ * @see {@link QueryBuilderOptions} for configuration options.
+ *
+ * ### Features:
+ * - `.include(includeArgs)`: Adds `include` clause to query.
+ * - `.search()`: Searches across defined fields using `searchTerm`.
+ * - `.filter()`: Filters fields from query object, excluding reserved fields.
+ * - `.sort()`: Sorts by fields using `sort` (e.g., `-createdAt,title`).
+ * - `.cursorPaginate()`: Enables cursor-based pagination using `cursor` param.
+ * - `.fields()`: Selects specific fields using `fields` param (e.g., `id,title`).
+ * - `.execute()`: Runs the query and returns results.
+ * - `.executeWithMeta()`: Returns results along with metadata (pagination, total, etc).
+ */
 class QueryBuilder<T> {
   private delegate: Delegate<T>;
   private args: any;
-  private query: Record<string, unknown>;
-  private _limit = 5;
+  private query: Record<string, any>;
+  private options: QueryBuilderOptions<T>;
+  private _limit: number;
 
-  constructor(delegate: Delegate<T>, query: Record<string, unknown>) {
+  constructor(
+    delegate: Delegate<T>,
+    query: Record<string, any>,
+    options?: QueryBuilderOptions<T>
+  ) {
     this.delegate = delegate;
-    this.args = {};
     this.query = query;
+    this.args = {};
+    this.options = options || {};
+    this._limit = Number(query.limit) || options?.defaultLimit || 10;
   }
 
-  include(includeArgs: Record<string, unknown>) {
+  include(includeArgs: Record<string, any>) {
     this.args.include = includeArgs;
     return this;
   }
 
-  search(searchableFields: string[]) {
-    const term = this.query.searchTerm as string | undefined;
-    if (!term) return this;
+  search() {
+    const { searchableFields = [], enumFields = [] } = this.options;
+    const term = this.query.searchTerm as string;
+    if (!term || searchableFields.length === 0) return this;
 
     const OR = searchableFields.map((field) => {
-      const enumFields = ['breedType', 'gender', 'breedingStatus'];
       if (enumFields.includes(field)) {
         return { [field]: { equals: term.toUpperCase() } };
       }
@@ -43,63 +103,45 @@ class QueryBuilder<T> {
   }
 
   filter() {
-    const queryObj = { ...this.query };
-    const excludeFields = [
-      'searchTerm',
-      'sort',
-      'limit',
-      'page',
-      'fields',
-      'cursor',
-      'showAll'
-    ];
-    excludeFields.forEach((el) => delete queryObj[el]);
+    const queryCopy = { ...this.query };
+    const excluded = ['searchTerm', 'sort', 'limit', 'page', 'fields', 'cursor', 'showAll'];
+    excluded.forEach((field) => delete queryCopy[field]);
 
-    // Apply isActive: true by default, unless showAll is true
-    const showAll = this.query.showAll === true || this.query.showAll === 'true';
-    if (!showAll) {
+    if (this.query.showAll !== 'true') {
       this.args.where = { ...this.args.where, isActive: true };
     }
 
-    this.args.where = { ...this.args.where, ...queryObj };
+    this.args.where = { ...this.args.where, ...queryCopy };
     return this;
   }
 
   sort() {
-    const sort = this.query.sort as string | undefined;
-    if (sort) {
-      const sortFields = sort.split(',').map((field) =>
+    const sortQuery = this.query.sort as string;
+    if (sortQuery) {
+      const sortFields = sortQuery.split(',').map((field) =>
         field.startsWith('-')
           ? { [field.slice(1)]: 'desc' }
           : { [field]: 'asc' }
       );
       this.args.orderBy = sortFields;
+    } else if (this.options.defaultSort) {
+      this.args.orderBy = this.options.defaultSort;
     } else {
       this.args.orderBy = [{ createdAt: 'desc' }];
     }
     return this;
   }
 
-  /** 
-   * Cursor‐based pagination. 
-   * - `cursor` is the last‐seen record’s primary key (id).
-   * - `limit` is the page size.
-   */
   cursorPaginate() {
-    const limit = Number(this.query.limit) || this._limit;
-    this._limit = limit;
+    const cursorValue = this.query.cursor;
+    const cursorField = this.options.cursorField || 'id';
 
-    const cursor = this.query.cursor as string | undefined;
-    if (cursor) {
-      // skip the cursor itself, take the next `limit`
-      this.args.cursor = { id: cursor };
-      this.args.take = limit;
+    if (cursorValue) {
+      this.args.cursor = { [cursorField]: cursorValue };
       this.args.skip = 1;
-    } else {
-      // first page: just take `limit`
-      this.args.take = limit;
     }
 
+    this.args.take = this._limit;
     return this;
   }
 
@@ -107,16 +149,10 @@ class QueryBuilder<T> {
     const fieldsParam = this.query.fields;
     if (fieldsParam && typeof fieldsParam === 'string') {
       const fields = fieldsParam.split(',').map((f) => f.trim());
-      if (fields.length) {
-        delete this.args.include;
-        this.args.select = fields.reduce(
-          (acc: Record<string, boolean>, field) => {
-            acc[field] = true;
-            return acc;
-          },
-          {}
-        );
-      }
+      this.args.select = fields.reduce((acc: Record<string, boolean>, field) => {
+        acc[field] = true;
+        return acc;
+      }, {});
     }
     return this;
   }
@@ -125,30 +161,19 @@ class QueryBuilder<T> {
     return this.delegate.findMany(this.args);
   }
 
-  /**
-   * Runs the data query and a matching count query, then returns { meta, data }.
-   * For cursor pagination, meta.nextCursor will be the `id` of the last item.
-   */
   async executeWithMeta(): Promise<{ meta: Meta; data: T[] }> {
-    // count all matching records
-    const countArgs = { where: this.args.where };
-  
-    // 2) Run the two queries
     const [data, total] = await Promise.all([
-          // fetch data
-
       this.delegate.findMany(this.args),
-      // count returns a number, so just pass where
-      (this.delegate as any).count(countArgs),
+      this.delegate.count({ where: this.args.where }),
     ]);
-  
-    // 3) Compute nextCursor if using cursor pagination
+
     let nextCursor: string | null = null;
     if (data.length === this._limit) {
-      // @ts-ignore assume T has `id`
-      nextCursor = (data[data.length - 1] as any).id;
+      const last = data[data.length - 1] as any;
+      const field = this.options.cursorField || 'id';
+      nextCursor = last?.[field] ?? null;
     }
-  
+
     return {
       meta: {
         page: this.query.page ? Number(this.query.page) : undefined,
@@ -159,8 +184,7 @@ class QueryBuilder<T> {
       data,
     };
   }
-  
 }
 
 export default QueryBuilder;
-export type { Meta };
+export type { Meta, QueryBuilderOptions };
