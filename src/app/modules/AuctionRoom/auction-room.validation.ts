@@ -13,7 +13,10 @@ const createAuctionRoomSchema = z.object({
     createdBy: z.string().uuid(),
   }),
 });
+const updateAuctionRoomSchema = z.object({
+  body: createAuctionRoomSchema.shape.body.omit({createdBy:true}).partial().strict()
+})
 
 export const AuctionRoomValidation = {
-  createAuctionRoomSchema,
+  createAuctionRoomSchema,updateAuctionRoomSchema
 };

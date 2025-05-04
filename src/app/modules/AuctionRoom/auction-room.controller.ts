@@ -22,12 +22,61 @@ const getAllAuctionRooms = catchAsync(async (req: Request, res: Response) => {
     statusCode: httpStatus.OK,
     success: true,
     data: result.data,
-    meta:result.meta,
+    meta: result.meta,
     message: "Auction rooms retrieved",
+  });
+});
+const getSingleAuctionRoom = catchAsync(async (req: Request, res: Response) => {
+  const result = await AuctionRoomService.getSingle(req.params.id);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    data: result,
+
+    message: "Auction room retrieved",
+  });
+});
+const updateSingleAuctionRoom = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await AuctionRoomService.update(req.params.id, req.body);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      data: result,
+
+      message: "Auction room updated",
+    });
+  }
+);
+const toggleAuctionRoom = catchAsync(async (req: Request, res: Response) => {
+  const result = await AuctionRoomService.toggleActive(req.params.id);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    data: result,
+
+    message: "Auction room active status changed",
+  });
+});
+const deleteAuctionRoom = catchAsync(async (req: Request, res: Response) => {
+  await AuctionRoomService.hardDelete(req.params.id);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    data: null,
+
+    message: "Auction room deleted",
   });
 });
 
 export const AuctionRoomController = {
   createAuctionRoom,
   getAllAuctionRooms,
+  getSingleAuctionRoom,
+  updateSingleAuctionRoom,
+  toggleAuctionRoom,deleteAuctionRoom
 };
