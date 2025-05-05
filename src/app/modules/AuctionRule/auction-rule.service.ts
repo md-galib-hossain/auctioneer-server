@@ -12,8 +12,9 @@ const create = async (data: CreateAuctionRuleInput): Promise<IAuctionRule> => {
 const getAll = async (query: Record<string, unknown>) => {
   const qb = new QueryBuilder<IAuctionRule>(prisma.auctionRule, query, {
     defaultLimit: 10,
-    searchableFields: ["description", "key"],
+    searchableFields: [ "key"],
     cursorField: "id",
+    
   });
 
   const result = await qb
@@ -21,6 +22,7 @@ const getAll = async (query: Record<string, unknown>) => {
     .filter()
     .sort()
     .cursorPaginate()
+    
     .fields()
     .executeWithMeta();
 

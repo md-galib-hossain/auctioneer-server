@@ -129,8 +129,8 @@ model AuctionRule {
   id            String      @id @default(uuid())
   auctionRoomId String
   description   String // e.g., "Next bid must be within 15 seconds"
-  key           String? // e.g., "bid_time_limit"
-  value         String? // e.g., "15"
+  key           String // e.g., "bid_time_limit"
+  value         String // e.g., "15"
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   auctionRoom   AuctionRoom @relation(fields: [auctionRoomId], references: [id], onDelete: Cascade)

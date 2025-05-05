@@ -10,7 +10,7 @@ const createAuctionRoomSchema = z.object({
     status: z.enum(["pending", "active", "closed"]).optional(),
     startTime: z.string().datetime().optional(),
     endTime: z.string().datetime().optional(),
-    createdBy: z.string().uuid(),
+    createdBy: z.string({required_error:"User id is required"}),
   }),
 });
 const updateAuctionRoomSchema = z.object({

@@ -1,11 +1,70 @@
--- DropForeignKey
-ALTER TABLE "Account" DROP CONSTRAINT "Account_userId_fkey";
+-- CreateEnum
+CREATE TYPE "AuctionRoomStatus" AS ENUM ('pending', 'active', 'closed');
 
--- DropForeignKey
-ALTER TABLE "Session" DROP CONSTRAINT "Session_userId_fkey";
+-- CreateEnum
+CREATE TYPE "AuctionItemStatus" AS ENUM ('pending', 'active', 'sold');
 
--- AlterTable
-ALTER TABLE "User" ALTER COLUMN "banned" SET DEFAULT false;
+-- CreateTable
+CREATE TABLE "User" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "emailVerified" BOOLEAN DEFAULT false,
+    "image" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "role" TEXT DEFAULT 'user',
+    "banned" BOOLEAN DEFAULT false,
+    "banReason" TEXT,
+    "banExpires" INTEGER,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Session" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "ipAddress" TEXT,
+    "userAgent" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Account" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "accountId" TEXT NOT NULL,
+    "providerId" TEXT NOT NULL,
+    "accessToken" TEXT,
+    "refreshToken" TEXT,
+    "accessTokenExpiresAt" TIMESTAMP(3),
+    "refreshTokenExpiresAt" TIMESTAMP(3),
+    "scope" TEXT,
+    "idToken" TEXT,
+    "password" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Account_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "verification" (
+    "id" TEXT NOT NULL,
+    "identifier" TEXT NOT NULL,
+    "value" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "verification_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "AuctionRoom" (
@@ -15,7 +74,8 @@ CREATE TABLE "AuctionRoom" (
     "description" TEXT,
     "isPrivate" BOOLEAN NOT NULL DEFAULT false,
     "password" TEXT,
-    "status" TEXT NOT NULL DEFAULT 'pending',
+    "status" "AuctionRoomStatus" NOT NULL DEFAULT 'pending',
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "startTime" TIMESTAMP(3),
@@ -33,7 +93,8 @@ CREATE TABLE "AuctionItem" (
     "description" TEXT,
     "startingPrice" DOUBLE PRECISION NOT NULL,
     "currentPrice" DOUBLE PRECISION,
-    "status" TEXT NOT NULL DEFAULT 'pending',
+    "status" "AuctionItemStatus" NOT NULL DEFAULT 'pending',
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
     "winnerId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -46,8 +107,8 @@ CREATE TABLE "AuctionRule" (
     "id" TEXT NOT NULL,
     "auctionRoomId" TEXT NOT NULL,
     "description" TEXT NOT NULL,
-    "key" TEXT,
-    "value" TEXT,
+    "key" TEXT NOT NULL,
+    "value" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -95,6 +156,12 @@ CREATE TABLE "_AuctionRoomParticipants" (
 
     CONSTRAINT "_AuctionRoomParticipants_AB_pkey" PRIMARY KEY ("A","B")
 );
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Session_token_key" ON "Session"("token");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "AuctionRoom_roomCode_key" ON "AuctionRoom"("roomCode");

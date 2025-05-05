@@ -1,16 +1,10 @@
 import type { Prisma } from "@prisma/client";
 import { IMeta } from "../interface/interface";
 
-
-
-
-
 type Delegate<T> = {
   findMany: (args: any) => Promise<T[]>;
   count: (args: any) => Promise<number>;
 };
-
-
 
 interface QueryBuilderOptions<T> {
   defaultLimit?: number;
@@ -18,45 +12,13 @@ interface QueryBuilderOptions<T> {
   enumFields?: (keyof T)[];
   defaultSort?: Prisma.Enumerable<Prisma.SortOrder>;
   cursorField?: keyof T;
+  activeField?: keyof T; // NEW: configurable active status field
 }
 
 /**
  * QueryBuilder is a utility class to dynamically construct Prisma queries
  * based on incoming query parameters, supporting features like search, filter,
  * sorting, field selection, and cursor-based pagination.
- *
- * @template T - The Prisma model type (e.g., IAuctionRoom).
- *
- * @param delegate - The Prisma delegate for the model, typically `prisma.modelName`.
- * @param query - The incoming query object from the request, typically of type `Record<string, unknown>`.
- * @param options - Optional configuration to customize query behavior.
- *
- * @example
- * const qb = new QueryBuilder<IAuctionRoom>(prisma.auctionRoom, query, {
- *   defaultLimit: 10,
- *   searchableFields: ['roomCode', 'title'],
- *   enumFields: ['isPrivate', 'status'],
- *   cursorField: 'id',
- * });
- * const result = await qb
- *   .search()
- *   .filter()
- *   .sort()
- *   .cursorPaginate()
- *   .fields()
- *   .executeWithMeta();
- *
- * @see {@link QueryBuilderOptions} for configuration options.
- *
- * ### Features:
- * - `.include(includeArgs)`: Adds `include` clause to query.
- * - `.search()`: Searches across defined fields using `searchTerm`.
- * - `.filter()`: Filters fields from query object, excluding reserved fields.
- * - `.sort()`: Sorts by fields using `sort` (e.g., `-createdAt,title`).
- * - `.cursorPaginate()`: Enables cursor-based pagination using `cursor` param.
- * - `.fields()`: Selects specific fields using `fields` param (e.g., `id,title`).
- * - `.execute()`: Runs the query and returns results.
- * - `.executeWithMeta()`: Returns results along with metadata (pagination, total, etc).
  */
 class QueryBuilder<T> {
   private delegate: Delegate<T>;
@@ -103,8 +65,10 @@ class QueryBuilder<T> {
     const excluded = ['searchTerm', 'sort', 'limit', 'page', 'fields', 'cursor', 'showAll'];
     excluded.forEach((field) => delete queryCopy[field]);
 
-    if (this.query.showAll !== 'true') {
-      this.args.where = { ...this.args.where, isActive: true };
+    const { activeField } = this.options;
+
+    if (this.query.showAll !== 'true' && activeField) {
+      this.args.where = { ...this.args.where, [activeField]: true };
     }
 
     this.args.where = { ...this.args.where, ...queryCopy };

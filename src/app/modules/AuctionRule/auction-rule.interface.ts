@@ -2,8 +2,8 @@ export interface IAuctionRule {
     id: string;
     auctionRoomId: string;
     description: string;
-    key?: string | null;
-    value?: string | null;
+    key: string ;
+    value: string ;
     createdAt: Date;
     updatedAt: Date;
   }

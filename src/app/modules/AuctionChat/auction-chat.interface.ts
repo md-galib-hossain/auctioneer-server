@@ -6,3 +6,5 @@ export interface IAuctionChatMessage {
     createdAt: Date;
   }
   
+    export type CreateAuctionChatMessageInput = Omit<IAuctionChatMessage, "id" | "createdAt" >;
+  
