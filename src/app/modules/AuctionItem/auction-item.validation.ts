@@ -1,19 +1,24 @@
 import { z } from "zod";
 
-const createAuctionRoomSchema = z.object({
-  body: z.object({
-    title: z.string().min(1),
-    roomCode: z.string().min(1),
-    description: z.string().optional(),
-    isPrivate: z.boolean().optional(),
-    password: z.string().optional(), // Required only if isPrivate is true (validate later in controller)
-    status: z.enum(["pending", "active", "closed"]).optional(),
-    startTime: z.string().datetime().optional(),
-    endTime: z.string().datetime().optional(),
-    createdBy: z.string().uuid(),
-  }),
+const baseAuctionItemSchema = z.object({
+  auctionRoomId: z.string().uuid(),
+  name: z.string().min(1),
+  description: z.string().optional(),
+  startingPrice: z.number().positive("Starting price must be greater than 0"),
+  currentPrice: z.number().positive().optional(),
+  status: z.enum(["pending", "active", "sold"]).optional(),
+  winnerId: z.string().uuid().nullable().optional(),
 });
 
-export const AuctionRoomValidation = {
-  createAuctionRoomSchema,
+const createAuctionItemSchema = z.object({
+  body: baseAuctionItemSchema,
+});
+
+const updateAuctionItemSchema = z.object({
+  body: baseAuctionItemSchema.omit({ auctionRoomId: true }).partial().strict(),
+});
+
+export const AuctionItemValidation = {
+  createAuctionItemSchema,
+  updateAuctionItemSchema,
 };

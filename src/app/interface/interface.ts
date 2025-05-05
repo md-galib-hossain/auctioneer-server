@@ -1,13 +1,15 @@
 
+export interface IMeta {
+  page?: number;
+  limit?: number;
+  total?: number;
+  nextCursor?: string | null;
+}
 export type TSendResponse<T> = {
   statusCode: number;
   success: boolean;
   message: string;
-  meta?: {
-    limit?: number;
-    total?: number;
-    nextCursor?: string | null;
-  } | null;
+  meta?: IMeta | null;
   data: T | null | undefined;
 };
 

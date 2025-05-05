@@ -79,42 +79,50 @@ enum AuctionRoomStatus {
 }
 
 model AuctionRoom {
-  id           String        @id @default(uuid())
+  id           String            @id @default(uuid())
   title        String
-  roomCode  String        @unique
+  roomCode     String            @unique
   description  String? // Optional hints about item types
-  isPrivate    Boolean       @default(false)
+  isPrivate    Boolean           @default(false)
   password     String? // Required for private rooms
-  status       AuctionRoomStatus  
-  isActive Boolean @default(true)      
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  status       AuctionRoomStatus @default(pending)
+  isActive     Boolean           @default(true)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
   startTime    DateTime?
   endTime      DateTime?
   createdBy    String // Admin or superadmin who created the room
-  creator      User          @relation(fields: [createdBy], references: [id], onDelete: Restrict)
-  participants User[]        @relation("AuctionRoomParticipants")
+  creator      User              @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+  participants User[]            @relation("AuctionRoomParticipants")
   items        AuctionItem[]
   rules        AuctionRule[]
   bids         Bid[]
   messages     ChatMessage[]
 }
 
+enum AuctionItemStatus {
+  pending
+  active
+  sold
+}
+
 model AuctionItem {
-  id            String      @id @default(uuid())
+  id            String            @id @default(uuid())
   auctionRoomId String
   name          String // Revealed after entering room
   description   String?
   startingPrice Float
   currentPrice  Float? // Updated with highest bid
-  status        String      @default("pending") // Options: pending, active, sold
+  status        AuctionItemStatus @default(pending) // Options: pending, active, sold
+  isActive      Boolean           @default(true)
   winnerId      String? // User who won the item
-  winner        User?       @relation(fields: [winnerId], references: [id], onDelete: SetNull)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  auctionRoom   AuctionRoom @relation(fields: [auctionRoomId], references: [id], onDelete: Cascade)
-  bids          Bid[]
-  cartItems     CartItem[]
+  winner        User?             @relation(fields: [winnerId], references: [id], onDelete: SetNull)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  auctionRoom   AuctionRoom       @relation(fields: [auctionRoomId], references: [id], onDelete: Cascade)
+
+  bids      Bid[]
+  cartItems CartItem[]
 }
 
 model AuctionRule {

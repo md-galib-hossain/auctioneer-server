@@ -1,4 +1,5 @@
 import type { Prisma } from "@prisma/client";
+import { IMeta } from "../interface/interface";
 
 
 
@@ -9,12 +10,7 @@ type Delegate<T> = {
   count: (args: any) => Promise<number>;
 };
 
-interface Meta {
-  page?: number;
-  limit?: number;
-  total?: number;
-  nextCursor?: string | null;
-}
+
 
 interface QueryBuilderOptions<T> {
   defaultLimit?: number;
@@ -161,7 +157,7 @@ class QueryBuilder<T> {
     return this.delegate.findMany(this.args);
   }
 
-  async executeWithMeta(): Promise<{ meta: Meta; data: T[] }> {
+  async executeWithMeta(): Promise<{ meta: IMeta; data: T[] }> {
     const [data, total] = await Promise.all([
       this.delegate.findMany(this.args),
       this.delegate.count({ where: this.args.where }),
@@ -187,4 +183,4 @@ class QueryBuilder<T> {
 }
 
 export default QueryBuilder;
-export type { Meta, QueryBuilderOptions };
+export type { IMeta, QueryBuilderOptions };
