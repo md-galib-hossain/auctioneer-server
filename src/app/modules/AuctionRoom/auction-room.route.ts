@@ -9,6 +9,8 @@ router.post(
   validateRequest(AuctionRoomValidation.createAuctionRoomSchema),
   AuctionRoomController.createAuctionRoom
 );
+router.post("/join-room", AuctionRoomController.joinAuctionRoom);
+router.get("/room/:id", AuctionRoomController.getAllParticipants);
 router.get("/", AuctionRoomController.getAllAuctionRooms);
 router.get("/:id", AuctionRoomController.getSingleAuctionRoom);
 router.patch(

@@ -1,6 +1,5 @@
 import { prisma } from "../../db/db";
-import AppError from "../../errors/AppError";
-import httpStatus from "http-status";
+
 import QueryBuilder from "../../builder/queryBuilder";
 import { CreateAuctionRuleInput, IAuctionRule } from "./auction-rule.interface";
 

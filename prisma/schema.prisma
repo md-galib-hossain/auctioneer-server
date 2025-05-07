@@ -160,7 +160,7 @@ model CartItem {
 
 model ChatMessage {
   id            String      @id @default(uuid())
-  auctionRoomId String
+  auctionRoomId String 
   userId        String
   content       String
   createdAt     DateTime    @default(now())

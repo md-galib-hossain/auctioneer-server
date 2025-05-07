@@ -72,11 +72,36 @@ const deleteAuctionRoom = catchAsync(async (req: Request, res: Response) => {
     message: "Auction room deleted",
   });
 });
+const joinAuctionRoom = catchAsync(async (req: Request, res: Response) => {
+  const {userId,roomCode,password} = req.body
+  const result =await AuctionRoomService.joinAuctionRoom(userId,roomCode,password);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    data: result,
+
+    message: "Auction room joined",
+  });
+});
+
+const getAllParticipants = catchAsync(async (req: Request, res: Response) => {
+  const {id} = req.params
+  const result = await AuctionRoomService.getParticipants(id);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    data: result,
+    // meta: result.meta,
+    message: "Participants retrieved",
+  });
+});
 
 export const AuctionRoomController = {
   createAuctionRoom,
   getAllAuctionRooms,
   getSingleAuctionRoom,
   updateSingleAuctionRoom,
-  toggleAuctionRoom,deleteAuctionRoom
+  toggleAuctionRoom,deleteAuctionRoom,joinAuctionRoom,getAllParticipants
 };

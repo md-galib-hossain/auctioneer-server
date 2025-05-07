@@ -66,8 +66,44 @@ return null
 }
 
 
+
+
+async function joinAuctionRoom(userId:string, roomCode:string, password :string) {
+ 
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || user.banned) throw new Error("User cannot join");
+
+  const room = await prisma.auctionRoom.findUnique({ where: { roomCode } });
+  if (!room || !room.isActive || room.status === "closed") {
+    throw new Error("Room is unavailable");
+  }
+
+  if (room.isPrivate && room.password !== password) {
+    throw new Error("Invalid password");
+  }
+
+  const response =await prisma.auctionRoom.update({
+    where: { id: room.id },
+    data: {
+      participants: { connect: { id: userId } },
+    },
+  });
+
+  return { message: `User ${user.name} joined room ${room.title}`,roomCode:response.roomCode,roomId: room.id };
+}
+
+async function getParticipants(roomCode:string) {
+  const room = await prisma.auctionRoom.findUnique({
+    where: {  roomCode },
+    include: { participants: true },
+  });
+  console.log(room)
+  return room ? room.participants : null;
+}
+
+
 export const AuctionRoomService = {
   create,
   getAll,
-  getSingle,update,toggleActive,hardDelete
+  getSingle,update,toggleActive,hardDelete,joinAuctionRoom,getParticipants
 };
